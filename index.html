@@ -33,8 +33,11 @@ header .mes{display:inline-block;margin-top:12px;border:1.5px solid var(--red);b
 .search input:focus{border-color:var(--blue);background:#fff}
 .search svg{position:absolute;left:14px;top:50%;transform:translateY(-50%);width:20px;height:20px;stroke:var(--mute);fill:none;stroke-width:2}
 .search button{position:absolute;right:8px;top:50%;transform:translateY(-50%);border:0;background:none;font-size:22px;color:var(--mute);width:32px;height:32px;cursor:pointer;display:none}
-.chips{display:flex;gap:8px;overflow-x:auto;padding-top:10px;scrollbar-width:none}
-.chips::-webkit-scrollbar{display:none}
+.tog{margin-top:10px;width:100%;display:flex;justify-content:space-between;align-items:center;font:inherit;font-size:15px;font-weight:700;color:var(--navy);background:#fff;border:1.5px solid var(--navy);border-radius:6px;padding:10px 14px;cursor:pointer}
+.tog .v{font-weight:500;color:var(--blue)}
+.tog .ch{transition:transform .2s}.tog.open .ch{transform:rotate(180deg)}
+.chips{display:none;flex-wrap:wrap;gap:8px;padding:12px 0 4px;max-height:55vh;overflow-y:auto}
+.chips.open{display:flex}
 .chip{flex:none;font:inherit;font-size:13px;font-weight:600;border:1.5px solid var(--line);background:#fff;color:var(--navy);border-radius:999px;padding:6px 12px;cursor:pointer;white-space:nowrap}
 .chip.on{background:var(--navy);color:#fff;border-color:var(--navy)}
 .count{font-size:13px;color:var(--mute);padding:10px 16px 0}
@@ -106,7 +109,7 @@ footer h3{font-size:13px;letter-spacing:2px;text-transform:uppercase;color:var(-
 <div class="bar"><div class="wrap">
 <div class="search"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
 <input id="q" type="text" inputmode="search" enterkeyhint="search" placeholder="Busca por comuna" autocomplete="off"><button id="clr" aria-label="Borrar">×</button></div>
-<div class="chips" id="chips"></div>
+<button class="tog" id="tog"><span>Comuna: <span class="v" id="togv">Todas</span></span><span class="ch">▾</span></button><div class="chips" id="chips"></div>
 </div></div>
 <div class="wrap"><div class="count" id="count"></div></div>
 <main><div class="wrap" id="list"></div><div class="empty" id="empty">No hay propiedades para esa búsqueda.</div></main>
@@ -126,14 +129,16 @@ const comunas=[...new Set(P.map(p=>p.com))];
 const $=id=>document.getElementById(id);
 let sel=null;
 $("chips").innerHTML='<button class="chip on" data-c="">Todas</button>'+comunas.map(c=>`<button class="chip" data-c="${esc(c)}">${esc(c)} <span style="opacity:.6">${P.filter(p=>p.com==c).length}</span></button>`).join("");
-$("chips").onclick=e=>{const b=e.target.closest(".chip");if(!b)return;sel=b.dataset.c||null;$("q").value="";render();};
+$("chips").onclick=e=>{const b=e.target.closest(".chip");if(!b)return;sel=b.dataset.c||null;$("q").value="";ch.classList.remove("open");$("tog").classList.remove("open");render();scrollTo({top:$("list").offsetTop-document.querySelector(".bar").offsetHeight-8,behavior:"smooth"});};
+const ch=$("chips");
+$("tog").onclick=()=>{ch.classList.toggle("open");$("tog").classList.toggle("open");};
 $("q").oninput=()=>{sel=null;render();};
 $("clr").onclick=()=>{$("q").value="";sel=null;render();$("q").focus();};
 function tags(p){return (p.liq?'<span class="tag liq">Liquidación</span>':'')+`<span class="tag ${p.est=="Desocupada"?"de":"oc"}">${p.est}</span>`;}
 function render(){
   const q=norm($("q").value.trim());
   $("clr").style.display=q?"block":"none";
-  document.querySelectorAll(".chip").forEach(b=>b.classList.toggle("on",(b.dataset.c||null)===sel&&!q));
+  $("togv").textContent=sel||(q?"búsqueda":"Todas");document.querySelectorAll(".chip").forEach(b=>b.classList.toggle("on",(b.dataset.c||null)===sel&&!q));
   const L=P.filter(p=>sel?p.com===sel:(!q||norm(p.com).includes(q)||norm(p.dir).includes(q)||norm(p.c).includes(q)||norm(p.tipo).includes(q)));
   let h="",cur=null;
   for(const c of comunas){const G=L.filter(p=>p.com===c);if(!G.length)continue;
